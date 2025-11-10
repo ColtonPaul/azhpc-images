@@ -118,24 +118,24 @@
     "nvidia": {
         "ubuntu22.04": {
             "driver": {
-                "version": "570.133.20",
-                "sha256": "1253d17b1528e8a24bf1f34a8ac6591c924b98ad7a32344bde253aa622ac1605"
+                "version": "580.95.05",
+                "sha256": "849ef0ef8e842b9806b2cde9f11c1303d54f1a9a769467e4e5d961b2fe1182a7"
             },
             "fabricmanager": {
                 "distribution": "ubuntu2204",
-                "version": "570.133.20-1",
-                "sha256": "f9e4bf0b03d37facd1cd41f4bfd667bfab40b8c378b18ea0d9ca301d74ac6862"        
+                "version": "580.95.05-1",
+                "sha256": "b20e3a2bfa46fb8ae4adf19a265d07e962f03e4306ea3261f6c7e9adc678b442"        
             }   
         },
         "ubuntu24.04": {
             "driver": {
-                "version": "570.172.08",
-                "sha256": "0256867e082caf93d7b25fa7c8e69b316062a9c6c72c6e228fad7b238c6fa17d"
+                "version": "580.95.05",
+                "sha256": "849ef0ef8e842b9806b2cde9f11c1303d54f1a9a769467e4e5d961b2fe1182a7"
             },
             "fabricmanager": {
                 "distribution": "ubuntu2404",
-                "version": "570.172.08-1",
-                "sha256": "36bbcce6130f46df6fd2cbc4f09df8207442a884ef726a40cf5e9edc13b2bfd9"        
+                "version": "580.95.05-1",
+                "sha256": "b20e3a2bfa46fb8ae4adf19a265d07e962f03e4306ea3261f6c7e9adc678b442"
             }   
         },
         "almalinux8.10": {
