@@ -52,9 +52,16 @@
             }
         },
         "ubuntu24.04": {
-            "version": "2.24.1",
-            "sha256": "1cf4cea6b7984a1c274ecc620b2b8f3fc697a05de6f3954ff40fe26939e03708",
-            "url": "https://content.mellanox.com/hpc/hpc-x/v2.24.1_cuda12/hpcx-v2.24.1-gcc-doca_ofed-ubuntu24.04-cuda12-x86_64.tbz"
+            "common": {
+                "version": "2.24.1",
+                "sha256": "b34ae9a65ef653be6590147b747091c3c3753210bc98ad74a2304e6d95d5795b",
+                "url": "https://content.mellanox.com/hpc/hpc-x/v2.24.1_cuda13/hpcx-v2.24.1-gcc-doca_ofed-ubuntu24.04-cuda13-x86_64.tbz"
+            },
+            "nvidia-v100": {
+                "version": "2.24.1",
+                "sha256": "1cf4cea6b7984a1c274ecc620b2b8f3fc697a05de6f3954ff40fe26939e03708",
+                "url": "https://content.mellanox.com/hpc/hpc-x/v2.24.1_cuda12/hpcx-v2.24.1-gcc-doca_ofed-ubuntu24.04-cuda12-x86_64.tbz"
+            }
         },
         "almalinux8.10": {
             "version": "2.18",
