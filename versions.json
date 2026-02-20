@@ -196,8 +196,8 @@
         "ubuntu24.04": {
             "x86_64": {
                 "version": "4.1",
-                "sha256": "25a53d3725b669e2c648158fb7c9fc5b1388953f3a2f949748586c447d0e43ee",
-                "url": "https://mvapich.cse.ohio-state.edu/download/mvapich/mv2/mvapich-4.1.tar.gz"
+                "sha256": "2814844a4e78e915e258c9dea1be92939fa1bc9a4bcdfa82a917d105f0c6da3e",
+                "url": "https://mvapich.cse.ohio-state.edu/download/mvapich/plus/4.1/mvapich-plus-4.1-cuda12.9.rhel9.ofed24.10.ucx.gcc11.3.1-4.1-1.el9.x86_64.rpm"
             }
         },
         "ubuntu22.04": {

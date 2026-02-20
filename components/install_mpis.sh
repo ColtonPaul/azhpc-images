@@ -56,17 +56,45 @@ if ! [[ "${DISTRIBUTION}" == "ubuntu24.04" && "$SKU" == "GB200" ]]; then
     MVAPICH_VERSION=$(jq -r '.version' <<< $mvapich_metadata)
     MVAPICH_SHA256=$(jq -r '.sha256' <<< $mvapich_metadata)
     MVAPICH_DOWNLOAD_URL=$(jq -r '.url' <<< $mvapich_metadata)
-    TARBALL=$(basename $MVAPICH_DOWNLOAD_URL)
-    MVAPICH_FOLDER=$(basename $MVAPICH_DOWNLOAD_URL .tar.gz)
+    MVAPICH_INSTALL_DIR=${INSTALL_PREFIX}/mvapich-${MVAPICH_VERSION}
 
     download_and_verify $MVAPICH_DOWNLOAD_URL $MVAPICH_SHA256
-    tar -xvf ${TARBALL}
-    pushd ${MVAPICH_FOLDER}
-    # Error exclusive to Ubuntu 22.04
-    # configure: error: The Fortran compiler gfortran will not compile files that call
-    # the same routine with arguments of different types.
-    ./configure $(if [[ $DISTRIBUTION == *"ubuntu"* ]] || [[ $DISTRIBUTION == "azurelinux3.0" ]]; then echo "FFLAGS=-fallow-argument-mismatch"; fi) --prefix=${INSTALL_PREFIX}/mvapich-${MVAPICH_VERSION} --enable-g=none --enable-fast=yes && make -j$(nproc) && make install
-    popd
+
+    # MVAPICH-PLUS installation
+    # See https://mvapich.cse.ohio-state.edu/static/media/mvapich/README-PLUS4.txt for installation quirks such as using rpm2cpio and adjusting compiler wrapper scripts
+    if [[ "$MVAPICH_DOWNLOAD_URL" == *.rpm ]]; then
+        MVAPICH_RPM=$(basename $MVAPICH_DOWNLOAD_URL)
+        pushd /
+        rpm2cpio ${OLDPWD}/${MVAPICH_RPM} | cpio -idmv
+        popd
+
+        # Move from RPM default path to our standard location
+        MVAPICH_RPM_PATH=${INSTALL_PREFIX}/mvapich/plus/${MVAPICH_VERSION}/gnu
+        if [ -d "${MVAPICH_RPM_PATH}" ]; then
+            mv ${MVAPICH_RPM_PATH} ${MVAPICH_INSTALL_DIR}
+            rm -rf ${INSTALL_PREFIX}/mvapich/plus
+        fi
+
+        # Fix compiler wrapper scripts to reflect the new install path
+        if [ -d "${MVAPICH_INSTALL_DIR}/bin" ]; then
+            for wrapper in mpicc mpicxx mpif77 mpif90 mpifort; do
+                [ -f "${MVAPICH_INSTALL_DIR}/bin/${wrapper}" ] && \
+                    sed -i "s|${MVAPICH_RPM_PATH}|${MVAPICH_INSTALL_DIR}|g" ${MVAPICH_INSTALL_DIR}/bin/${wrapper}
+            done
+        fi
+    else
+        # Source build from tarball
+        TARBALL=$(basename $MVAPICH_DOWNLOAD_URL)
+        MVAPICH_FOLDER=$(basename $MVAPICH_DOWNLOAD_URL .tar.gz)
+        tar -xvf ${TARBALL}
+        pushd ${MVAPICH_FOLDER}
+        # Error exclusive to Ubuntu 22.04
+        # configure: error: The Fortran compiler gfortran will not compile files that call
+        # the same routine with arguments of different types.
+        ./configure $(if [[ $DISTRIBUTION == *"ubuntu"* ]] || [[ $DISTRIBUTION == "azurelinux3.0" ]]; then echo "FFLAGS=-fallow-argument-mismatch"; fi) --prefix=${MVAPICH_INSTALL_DIR} --enable-g=none --enable-fast=yes && make -j$(nproc) && make install
+        popd
+    fi
+
     write_component_version "MVAPICH" ${MVAPICH_VERSION}
 fi
 
@@ -150,7 +178,7 @@ setenv          MPI_MAN         /opt/mvapich-${MVAPICH_VERSION}/share/man
 setenv          MPI_HOME        /opt/mvapich-${MVAPICH_VERSION}
 EOF
     ln -s ${MPI_MODULE_FILES_DIRECTORY}/mvapich-${MVAPICH_VERSION} ${MPI_MODULE_FILES_DIRECTORY}/mvapich
-fi    
+fi
 
 # OpenMPI
 cat << EOF >> ${MPI_MODULE_FILES_DIRECTORY}/openmpi-${OMPI_VERSION}
@@ -203,5 +231,5 @@ ln -s ${MPI_MODULE_FILES_DIRECTORY}/hpcx-pmix-${HPCX_VERSION} ${MPI_MODULE_FILES
 ln -s ${MPI_MODULE_FILES_DIRECTORY}/openmpi-${OMPI_VERSION} ${MPI_MODULE_FILES_DIRECTORY}/openmpi
 
 # cleanup downloaded tarballs and other installation files/folders
-rm -rf *.tbz *.tar.gz *offline.sh
+rm -rf *.tbz *.tar.gz *.rpm *offline.sh
 rm -rf -- */
