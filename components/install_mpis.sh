@@ -69,17 +69,17 @@ if ! [[ "${DISTRIBUTION}" == "ubuntu24.04" && "$SKU" == "GB200" ]]; then
         popd
 
         # Find the actual MPI install root (contains bin/, lib/, etc.)
-        MVAPICH_INSTALL_ROOT=$(find ${INSTALL_PREFIX}/mvapich/plus -type d -name bin -printf '%h' -quit)
-        if [ -n "${MVAPICH_INSTALL_ROOT}" ] && [ -d "${MVAPICH_INSTALL_ROOT}" ]; then
-            mv ${MVAPICH_INSTALL_ROOT} ${MVAPICH_INSTALL_DIR}
-            rm -rf ${INSTALL_PREFIX}/mvapich/plus
+        MVAPICH_EXTRACTED_DIR=$(find ${INSTALL_PREFIX}/mvapich/plus -type d -name bin -printf '%h' -quit)
+        if [ -n "${MVAPICH_EXTRACTED_DIR}" ] && [ -d "${MVAPICH_EXTRACTED_DIR}" ]; then
+            mv ${MVAPICH_EXTRACTED_DIR} ${MVAPICH_INSTALL_DIR}
+            rm -rf ${INSTALL_PREFIX}/mvapich
         fi
 
         # Fix compiler wrapper scripts to reflect the new install path
         if [ -d "${MVAPICH_INSTALL_DIR}/bin" ]; then
             for wrapper in mpicc mpicxx mpif77 mpif90 mpifort; do
                 [ -f "${MVAPICH_INSTALL_DIR}/bin/${wrapper}" ] && \
-                    sed -i "s|${MVAPICH_INSTALL_ROOT}|${MVAPICH_INSTALL_DIR}|g" ${MVAPICH_INSTALL_DIR}/bin/${wrapper}
+                    sed -i "s|${MVAPICH_EXTRACTED_DIR}|${MVAPICH_INSTALL_DIR}|g" ${MVAPICH_INSTALL_DIR}/bin/${wrapper}
             done
         fi
     else
