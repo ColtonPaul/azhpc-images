@@ -68,10 +68,10 @@ if ! [[ "${DISTRIBUTION}" == "ubuntu24.04" && "$SKU" == "GB200" ]]; then
         rpm2cpio ${OLDPWD}/${MVAPICH_RPM} | cpio -idmv
         popd
 
-        # Move from RPM default path to our standard location
-        MVAPICH_RPM_PATH=${INSTALL_PREFIX}/mvapich/plus/${MVAPICH_VERSION}/gnu
-        if [ -d "${MVAPICH_RPM_PATH}" ]; then
-            mv ${MVAPICH_RPM_PATH} ${MVAPICH_INSTALL_DIR}
+        # Find the actual MPI install root (contains bin/, lib/, etc.)
+        MVAPICH_INSTALL_ROOT=$(find ${INSTALL_PREFIX}/mvapich/plus -type d -name bin -printf '%h' -quit)
+        if [ -n "${MVAPICH_INSTALL_ROOT}" ] && [ -d "${MVAPICH_INSTALL_ROOT}" ]; then
+            mv ${MVAPICH_INSTALL_ROOT} ${MVAPICH_INSTALL_DIR}
             rm -rf ${INSTALL_PREFIX}/mvapich/plus
         fi
 
@@ -79,7 +79,7 @@ if ! [[ "${DISTRIBUTION}" == "ubuntu24.04" && "$SKU" == "GB200" ]]; then
         if [ -d "${MVAPICH_INSTALL_DIR}/bin" ]; then
             for wrapper in mpicc mpicxx mpif77 mpif90 mpifort; do
                 [ -f "${MVAPICH_INSTALL_DIR}/bin/${wrapper}" ] && \
-                    sed -i "s|${MVAPICH_RPM_PATH}|${MVAPICH_INSTALL_DIR}|g" ${MVAPICH_INSTALL_DIR}/bin/${wrapper}
+                    sed -i "s|${MVAPICH_INSTALL_ROOT}|${MVAPICH_INSTALL_DIR}|g" ${MVAPICH_INSTALL_DIR}/bin/${wrapper}
             done
         fi
     else
