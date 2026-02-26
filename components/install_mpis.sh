@@ -82,6 +82,16 @@ if ! [[ "${DISTRIBUTION}" == "ubuntu24.04" && "$SKU" == "GB200" ]]; then
                     sed -i "s|${MVAPICH_EXTRACTED_DIR}|${MVAPICH_INSTALL_DIR}|g" ${MVAPICH_INSTALL_DIR}/bin/${wrapper}
             done
         fi
+
+        # The MVAPICH-Plus RPM was built on RHEL9 with Slurm bootstrap support in hydra,
+        # which adds a hard NEEDED link against libslurm.so.38, preventing mpiexec from launching on systems without Slurm
+        # or with a different Slurm version. Use patchelf to strip it to allow mpiexec to run (SLURM bootstrap will be broken)
+        apt-get install -y patchelf
+        find ${MVAPICH_INSTALL_DIR} -type f \( -executable -o -name "*.so*" \) | while read f; do
+            if readelf -d "$f" 2>/dev/null | grep -q "libslurm"; then
+                patchelf --remove-needed libslurm.so.38 "$f"
+            fi
+        done
     else
         # Source build from tarball
         TARBALL=$(basename $MVAPICH_DOWNLOAD_URL)

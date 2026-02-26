@@ -79,7 +79,7 @@ function verify_hpcx_installation {
     module purge
 }
 
-function verify_mvapich2_installation {
+function verify_mvapich_installation {
     check_exists "${MODULE_FILES_ROOT}/mpi/mvapich"
 
     module load mpi/mvapich
