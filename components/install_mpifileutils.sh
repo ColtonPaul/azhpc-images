@@ -19,11 +19,11 @@ echo "=== Installing mpifileutils ${MPIFILEUTILS_VERSION} ==="
 
 # Install build dependencies
 if [[ $DISTRIBUTION == *"ubuntu"* ]]; then
-    apt-get install -y libbz2-dev libattr1-dev libarchive-dev
+    apt-get install -y libbz2-dev libattr1-dev libarchive-dev libssl-dev
 elif [[ $DISTRIBUTION == almalinux* ]]; then
-    yum install -y bzip2-devel libattr-devel libarchive-devel
+    yum install -y bzip2-devel libattr-devel libarchive-devel openssl-devel
 elif [[ $DISTRIBUTION == "azurelinux3.0" ]]; then
-    tdnf install -y bzip2-devel libattr-devel libarchive-devel
+    tdnf install -y bzip2-devel libattr-devel libarchive-devel openssl-devel
 fi
 
 # Create directories
