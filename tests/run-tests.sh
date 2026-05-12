@@ -70,12 +70,9 @@ function verify_common_components {
     # Skip package updates check in validation mode (only run at build time)
     if [[ -z "${validation_mode:-}" ]]; then
         verify_package_updates;
+
     if has_infiniband; then
         verify_ofed_installation;
-    fi
-
-    # Skip IB device and module checks on SKUs without InfiniBand
-    if has_infiniband; then
         verify_ib_device_status;
         verify_ib_modules_and_devices;
     fi
