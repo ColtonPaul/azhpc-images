@@ -68,7 +68,8 @@ function test_component {
 # Verify common component installations accross all distros
 function verify_common_components {
     # Skip package updates check in validation mode (only run at build time)
-    verify_package_updates;
+    if [[ -z "${validation_mode:-}" ]]; then
+        verify_package_updates;
     if has_infiniband; then
         verify_ofed_installation;
     fi
