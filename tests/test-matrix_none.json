@@ -1,0 +1,11 @@
+{
+    "ubuntu26.04": {
+        "_comment": "Lustre is omitted until AMLFS publishes packages for resolute.",
+        "azure_vm_regular": {
+            "common": {
+                "components": ["check_impi_2021", "check_aocl", "check_aocc", "check_docker", "check_mpifileutils"],
+                "services": ["check_sunrpc_tcp_settings"]
+            }
+        }
+    }
+}

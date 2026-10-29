@@ -13,6 +13,12 @@ if [[ "${CURRENT_KERNEL_VERSION}" == "7.0" || "${CURRENT_KERNEL_VERSION}" == 7.0
     exit 0
 fi
 
+# AMLFS publishes no Ubuntu 26.04 (resolute) repository yet, whatever the kernel.
+if [[ "${DISTRIBUTION}" == "ubuntu26.04" ]]; then
+    echo "Skipping Lustre client installation on ${DISTRIBUTION}: no AMLFS repository"
+    exit 0
+fi
+
 configure_lustre_dkms_no_o2ib() {
     local config_file=$1
 

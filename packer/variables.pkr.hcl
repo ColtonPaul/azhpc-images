@@ -150,13 +150,17 @@ locals {
     "Standard_ND128isr_VR200_v6"            = "VR200"
     "ND144ISR_ETH_VR200_METAL_V6"           = "VR200"
     "Standard_NC144lds_xl_RTXPRO6000BSE_v6" = "NCv6"
+    "Standard_HD504s_v2"                    = "HDv2"
   }
   gpu_sku = lookup(local.vm_size_gpu_sku_map, local.target_vm_size, "A100")
   # No fallback: general-purpose or unlisted build sizes (e.g. H100 picked via
   # compatible-size scheduling) must not be treated as the target's GPU SKU.
   build_gpu_sku = lookup(local.vm_size_gpu_sku_map, local.build_vm_size, "")
+  # SKUs without a GPU use platform "none", which installs no GPU stack.
   gpu_platform = (
-    local.gpu_sku == "MI300X" ? "AMD" : "NVIDIA"
+    local.gpu_sku == "MI300X" ? "AMD" :
+    local.gpu_sku == "HDv2" ? "none" :
+    "NVIDIA"
   )
 }
 
@@ -703,6 +707,7 @@ locals {
     "Standard_ND128isr_GB300_v6"            = ["azure_vm_regular", "azure_vm_akshost"]
     "Standard_ND128isr_VR200_v6"            = ["azure_vm_regular"]
     "Standard_NC144lds_xl_RTXPRO6000BSE_v6" = ["azure_vm_regular"]
+    "Standard_HD504s_v2"                    = ["azure_vm_regular"]
     "ND144ISR_ETH_GB200_METAL_V6"           = ["baremetal_1p"]
     "ND144ISR_ETH_VR200_METAL_V6"           = ["baremetal_1p"]
   }
@@ -710,6 +715,9 @@ locals {
   target_vm_size_node_types = lookup(local.target_vm_size_allowed_node_types, local.target_vm_size, local.target_vm_size_allowed_node_types_default)
   target_vm_size_node_type_valid = contains(local.target_vm_size_node_types, local.target_node_type)
   _target_vm_size_node_type_check = local.target_vm_size_node_type_valid ? true : file("ERROR: Unsupported TARGET_VM_SIZE/TARGET_NODE_TYPE combination. Check target_vm_size_allowed_node_types in packer/variables.pkr.hcl.")
+
+  # GPU platform "none" has an install path only on Ubuntu 26.04.
+  _no_gpu_platform_os_check = (local.gpu_platform != "none" || (local.os_family == "ubuntu" && local.distro_version == "26.04")) ? true : file("ERROR: SKUs without a GPU (e.g. HDv2) are supported only on Ubuntu 26.04.")
 }
 
 locals {
@@ -866,6 +874,7 @@ locals {
     local.gpu_sku == "VR200" && startswith(local.target_node_type, "azure_vm_") ? "VR200-" :
     local.gpu_sku == "VR200" && local.target_node_type == "baremetal_1p" ? "VR200F-" :
     local.gpu_sku == "NCv6"  ? "NCv6-" :
+    local.gpu_sku == "HDv2"  ? "HDv2-" :
     ""
   )
   internal_sig_image_definition_details = {

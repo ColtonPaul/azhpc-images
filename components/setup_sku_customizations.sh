@@ -1,6 +1,12 @@
 #!/bin/bash
 set -ex
 
+# SKU customizations configure GPU topology and NCCL; GPU-less images have none.
+if [ "$GPU" = "none" ]; then
+    echo "No SKU customizations without a GPU platform"
+    exit 0
+fi
+
 ## Copy customization scripts to /opt/azurehpc/customizations
 mkdir -p /opt/azurehpc/customizations
 cp $COMPONENT_DIR/customizations/* /opt/azurehpc/customizations

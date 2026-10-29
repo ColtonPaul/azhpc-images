@@ -25,14 +25,17 @@ source ${UTILS_DIR}/utilities.sh
 
 ./install_utils.sh
 
-# install DOCA OFED. Skip for non-IB SKUs. DOCA's ib_core breaks mana_ib on MANA-only hardware
-if [[ "$(sku_network_mode)" != "no_rdma" ]]; then
+# install DOCA OFED. Skip on MANA-only SKUs: DOCA's ib_core breaks mana_ib.
+if sku_uses_doca; then
     $COMPONENT_DIR/install_doca.sh
 else
-    # Non-IB SKUs: install rdma-core for kernel-native IB module management (mana_ib support)
+    # MANA-only SKUs: install rdma-core for kernel-native IB module management (mana_ib support)
     apt-get install -y rdma-core libibverbs-dev ibverbs-utils librdmacm-dev pkg-config
-    # Install libfabric — replaces UCX as the networking abstraction for MPI on non-IB SKUs
+    # Install libfabric — replaces UCX as the networking abstraction for MPI on MANA-only SKUs
     $COMPONENT_DIR/install_libfabric.sh
+fi
+
+if sku_disables_mana_ib; then
     # Blacklist mana_ib — it exposes a non-functional verbs device (max_msg_size=0, no UD/SRQ,
     # guest RDMA not yet enabled) that causes UCX, libfabric verbs, and UCC to crash.
     # The mana ethernet driver (eth0/eth1) is unaffected.

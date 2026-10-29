@@ -3,7 +3,7 @@ set -ex
 
 # Check if arguments are passed
 if [ -z "$1" ] || [ -z "$2" ]; then
-    echo "Error: Missing arguments. Please provide both GPU type (NVIDIA/AMD) and SKU."
+    echo "Error: Missing arguments. Please provide both GPU platform (NVIDIA/AMD/none) and SKU."
     exit 1
 fi
 
@@ -11,8 +11,8 @@ export GPU=$1
 export SKU=$2
 
 if [[ "$#" -gt 0 ]]; then
-   if [[ "$GPU" != "NVIDIA" && "$GPU" != "AMD" ]]; then
-       echo "Error: Invalid GPU type. Please specify 'NVIDIA' or 'AMD'."
+   if [[ "$GPU" != "NVIDIA" && "$GPU" != "AMD" && "$GPU" != "none" ]]; then
+       echo "Error: Invalid GPU platform. Please specify 'NVIDIA', 'AMD' or 'none'."
        exit 1
     fi
 fi
@@ -35,8 +35,16 @@ source ${UTILS_DIR}/utilities.sh
 
 ./install_utils.sh
 
-# install DOCA OFED
-$COMPONENT_DIR/install_doca.sh
+if sku_uses_doca; then
+    # install DOCA OFED
+    $COMPONENT_DIR/install_doca.sh
+else
+    # MANA-only SKUs use the distro rdma-core, which provides the mana_ib verbs
+    # provider. DOCA's ib_core replaces the inbox RDMA core and breaks mana_ib.
+    apt-get install -y rdma-core libibverbs-dev ibverbs-utils librdmacm-dev pkg-config
+    # libfabric is the MPI networking layer on SKUs without UCX.
+    $COMPONENT_DIR/install_libfabric.sh
+fi
 
 if [[ "$GPU" == "AMD" ]]; then
     $COMPONENT_DIR/install_rocm.sh
@@ -66,8 +74,8 @@ if [ "$GPU" = "NVIDIA" ]; then
     $COMPONENT_DIR/install_dcgm.sh
 fi
 
-# install Lustre client; the shared installer skips kernel 7.0 until AMLFS
-# publishes a compatible package.
+# install Lustre client; the shared installer skips Ubuntu 26.04 until AMLFS
+# publishes a resolute repository.
 $COMPONENT_DIR/install_lustre_client.sh
 
 # install mpifileutils
@@ -99,7 +107,9 @@ $COMPONENT_DIR/hpc-tuning.sh
 $COMPONENT_DIR/install_waagent.sh
 
 # install persistent rdma naming
-$COMPONENT_DIR/install_azure_persistent_rdma_naming.sh
+if sku_uses_doca; then
+    $COMPONENT_DIR/install_azure_persistent_rdma_naming.sh
+fi
 
 # Install AZNFS Mount Helper
 $COMPONENT_DIR/install_aznfs.sh
@@ -110,8 +120,10 @@ $COMPONENT_DIR/install_hpcdiag.sh
 # install monitor tools
 $COMPONENT_DIR/install_monitoring_tools.sh
 
-# install Azure/NHC Health Checks
-$COMPONENT_DIR/install_health_checks.sh "$GPU"
+# install Azure/NHC Health Checks. Azure NHC has no configuration for GPU-less SKUs.
+if [[ "$GPU" != "none" ]]; then
+    $COMPONENT_DIR/install_health_checks.sh "$GPU"
+fi
 
 # write kernel and OS version metadata
 $COMPONENT_DIR/write_kernel_os_version.sh

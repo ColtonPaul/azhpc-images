@@ -89,9 +89,15 @@ function _is_ncv6_sku {
     [[ "${VMSIZE}" =~ ^($ncv6_sizes)$ ]]
 }
 
+# Private helper that matches HDv2.
+function _is_hdv2_sku {
+    local hdv2_sizes="standard_hd504s_v2"
+    [[ "${VMSIZE}" =~ ^($hdv2_sizes)$ ]]
+}
+
 # Whether the current SKU has NVLink.
 function has_nvlink {
-    ! _is_ncv6_sku
+    ! _is_ncv6_sku && ! _is_hdv2_sku
 }
 
 # Private helper that matches current MRC scope.
@@ -102,12 +108,12 @@ function _is_mrc_network {
 
 # Return current network mode for this build target.
 # Values:
-#   - no_rdma: no RDMA-capable fabric (e.g. NCv6)
+#   - mana: MANA is the only network; no NVIDIA networking hardware (e.g. NCv6, HDv2)
 #   - mrc : MRC network mode (currently baremetal_1p)
-#   - ib  : regular InfiniBand-capable path
+#   - standard_ib : regular InfiniBand-capable path
 function sku_network_mode {
-    if _is_ncv6_sku; then
-        echo "no_rdma"
+    if _is_ncv6_sku || _is_hdv2_sku; then
+        echo "mana"
     elif _is_mrc_network; then
         echo "mrc"
     else
@@ -115,10 +121,22 @@ function sku_network_mode {
     fi
 }
 
-# Whether this SKU uses UCX as its MPI transport layer.
-# Backward-compatible: only "no_rdma" (NCv6) disables UCX.
+# Whether mana_ib must be blacklisted. On NCv6 guest RDMA is not enabled, and
+# mana_ib exposes a non-functional verbs device that crashes UCX, libfabric
+# verbs, and UCC.
+function sku_disables_mana_ib {
+    _is_ncv6_sku
+}
+
+# Whether this SKU has NVIDIA networking hardware that needs DOCA-OFED.
+function sku_uses_doca {
+    [[ "$(sku_network_mode)" != "mana" ]]
+}
+
+# Whether this SKU uses UCX as its MPI transport layer. SKUs without
+# DOCA-OFED use libfabric instead.
 function sku_uses_ucx {
-    ! [[ "$(sku_network_mode)" == "no_rdma" ]]
+    sku_uses_doca
 }
 
 function sku_uses_ipoib {
@@ -132,6 +150,12 @@ function sku_uses_ipoib {
 function sku_has_nvswitch {
     local nvswitch_sizes="standard_nd96.*v4|standard_nd96is.*_h[12]00_v5"
     [[ "${VMSIZE}" =~ ^($nvswitch_sizes)$ ]]
+}
+
+# Guest RDMA on MANA-only SKUs needs the mana_ib driver to stay loadable.
+function verify_mana_ib_not_blacklisted {
+    ! grep -rqsE '^[[:space:]]*blacklist[[:space:]]+mana_ib([[:space:]]|$)' /etc/modprobe.d/
+    check_exit_code "mana_ib is not blacklisted" "mana_ib is blacklisted in /etc/modprobe.d"
 }
 
 # verify OFED installation

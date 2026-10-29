@@ -222,11 +222,11 @@ check_dkms_status() {
     done
 }
 
-# Private helper that matches NCv6.
-function _is_ncv6_sku {
+# Private helper that matches SKUs whose only network is MANA.
+function _is_mana_only_sku {
     case "$SKU" in
-        NCv6) return 0 ;;
-        *)    return 1 ;;
+        NCv6|HDv2) return 0 ;;
+        *)         return 1 ;;
     esac
 }
 
@@ -238,12 +238,12 @@ function _is_mrc_network {
 
 # Return current network mode for this build target.
 # Values:
-#   - no_rdma: no RDMA-capable fabric (e.g. NCv6)
+#   - mana: MANA is the only network; no NVIDIA networking hardware (e.g. NCv6, HDv2)
 #   - mrc : MRC network mode (currently baremetal_1p)
-#   - ib  : regular InfiniBand-capable path
+#   - standard_ib : regular InfiniBand-capable path
 function sku_network_mode {
-    if _is_ncv6_sku; then
-        echo "no_rdma"
+    if _is_mana_only_sku; then
+        echo "mana"
     elif _is_mrc_network; then
         echo "mrc"
     else
@@ -251,10 +251,22 @@ function sku_network_mode {
     fi
 }
 
-# Whether this SKU uses UCX as its MPI transport layer.
-# Backward-compatible: only "no_rdma" (NCv6) disables UCX.
+# Whether mana_ib must be blacklisted. On NCv6 guest RDMA is not enabled, and
+# mana_ib exposes a non-functional verbs device that crashes UCX, libfabric
+# verbs, and UCC.
+function sku_disables_mana_ib {
+    [[ "$SKU" == "NCv6" ]]
+}
+
+# Whether this SKU has NVIDIA networking hardware that needs DOCA-OFED.
+function sku_uses_doca {
+    [[ "$(sku_network_mode)" != "mana" ]]
+}
+
+# Whether this SKU uses UCX as its MPI transport layer. SKUs without
+# DOCA-OFED use libfabric instead.
 function sku_uses_ucx {
-    ! [[ "$(sku_network_mode)" == "no_rdma" ]]
+    sku_uses_doca
 }
 
 # Whether this SKU enables ipoib (InfiniBand over IPoIB) for MPI transport.

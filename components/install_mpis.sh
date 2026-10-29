@@ -16,8 +16,8 @@ mkdir -p ${MPI_MODULE_FILES_DIRECTORY}
 if [[ "$GPU" == "AMD" ]]; then
     # AMD has regression on higher versions of HPC-X
     hpcx_metadata=$(get_component_config "hpcx_amd")
-elif [[ "$(sku_network_mode)" == "no_rdma" ]]; then
-    # Non-IB SKUs skip DOCA-OFED. Use inbox HPC-X (UCX linked against kernel-native rdma-core)
+elif ! sku_uses_doca; then
+    # SKUs without DOCA-OFED use inbox HPC-X (UCX linked against kernel-native rdma-core)
     hpcx_metadata=$(get_component_config "hpcx_inbox")
 else
     hpcx_metadata=$(get_component_config "hpcx")
@@ -250,10 +250,12 @@ if ! sku_uses_ucx; then
     # - Force PML cm (MTL-based) instead of ob1 (BTL-based). ob1 auto-selects BTL openib
     #   which initializes against rdma-core but can't move data on MANA-only hardware, causing hangs.
     # - Use libfabric tcp provider explicitly (auto-detection fails due to docker bridge 172.17.0.1).
+    #   Restrict the one-sided OFI BTL the same way so it never opens a mana_ib verbs device.
     # - Disable UCC (tl_ucp probes verbs on MANA and fails) and hcoll (requires Mellanox IB HCA).
     read -r -d '' HPCX_NON_UCX_EXTRAS << 'EXTRAS' || true
 setenv          OMPI_MCA_pml cm
 setenv          OMPI_MCA_mtl_ofi_provider_include tcp
+setenv          OMPI_MCA_btl_ofi_provider_include tcp
 setenv          OMPI_MCA_coll_ucc_enable 0
 setenv          OMPI_MCA_coll_hcoll_enable 0
 EXTRAS
@@ -436,7 +438,7 @@ if [[ "$ARCHITECTURE" != "aarch64" ]]; then
     write_component_version "IMPI" ${IMPI_VERSION}
 
     IMPI_FI_PROVIDER="mlx"
-    if [[ "$(sku_network_mode)" == "no_rdma" ]]; then
+    if ! sku_uses_ucx; then
         IMPI_FI_PROVIDER="tcp"
     fi
 

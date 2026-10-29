@@ -63,7 +63,10 @@ apt-get -y install numactl \
                    pssh \
                    dos2unix
 
-$COMPONENT_DIR/install_cuda_repo_and_dkms.sh
+# GPU-less images need neither the CUDA repository nor its DKMS package.
+if [[ "$GPU" != "none" ]]; then
+    $COMPONENT_DIR/install_cuda_repo_and_dkms.sh
+fi
 
 # azcopy: Microsoft's PMC ubuntu/26.04/prod pool does not yet ship azcopy
 # (verified Sep 2026).

@@ -300,6 +300,13 @@
                 "sha256": "409ad5ea645338626a73f23832a83b835f7fbd8c06b95496127c18bb091dd46e",
                 "url": "https://content.mellanox.com/hpc/hpc-x/v2.25.1_cuda13/hpcx-v2.25.1-gcc-inbox-ubuntu24.04-cuda13-x86_64.tbz"
             }
+        },
+        "ubuntu26.04": {
+            "x86_64": {
+                "version": "2.51",
+                "sha256": "249ab24a2d19b4feed31ee80ee63c83b6bc928173148634d5540afa9eff5e70b",
+                "url": "https://content.mellanox.com/hpc/hpc-x/v2.51_cuda13/hpcx-v2.51-gcc-inbox-ubuntu26.04-cuda13-x86_64.tbz"
+            }
         }
     },
     "libfabric": {

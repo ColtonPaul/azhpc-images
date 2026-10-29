@@ -16,7 +16,7 @@
 #   ./run-tests.sh NVIDIA -v
 #
 # Arguments:
-#   PLATFORM     GPU platform type: "AMD" or "NVIDIA" (default: NVIDIA)
+#   PLATFORM     Platform type: "AMD", "NVIDIA" or "none" (default: NVIDIA)
 #
 # Options:
 #   -a           AKS host image mode - run sanity check for AKS host image
@@ -99,6 +99,8 @@ function verify_common_components {
             verify_ofed_installation;
             verify_ib_device_status;
             verify_ib_modules_and_devices;
+        elif [[ "$(sku_network_mode)" == "mana" ]] && ! sku_disables_mana_ib; then
+            verify_mana_ib_not_blacklisted;
         fi
     fi
 
@@ -186,6 +188,8 @@ function set_test_matrix {
        GPU_PLAT=$1
        if [[ ${GPU_PLAT} == "AMD" ]]; then
           gpu_platform="AMD"
+       elif [[ ${GPU_PLAT} == "none" ]]; then
+          gpu_platform="none"
        elif [[ ${GPU_PLAT} != "NVIDIA" ]]; then
           echo "${GPU_PLAT} is not a valid GPU platform"
           exit 1
